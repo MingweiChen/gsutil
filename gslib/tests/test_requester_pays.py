@@ -51,6 +51,8 @@ class TestRequesterPays(testcase.GsUtilIntegrationTestCase):
     self.requester_pays_object_uri = self.CreateObject(
         bucket_uri=self.requester_pays_bucket_uri, contents=OBJECT_CONTENTS)
     self.user_project_flag = ['-u', PopulateProjectId()]
+    # Todo: add --provisional-user-project
+    self.provisional_user_project_flag = ['-U', PopulateProjectId()]
 
   def _set_requester_pays(self, bucket_uri):
     self.RunGsUtil(['requesterpays', 'set', 'on', suri(bucket_uri)])

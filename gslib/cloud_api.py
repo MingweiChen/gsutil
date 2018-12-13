@@ -28,7 +28,8 @@ class CloudApi(object):
 
   def __init__(self, bucket_storage_uri_class, logger, status_queue,
                provider=None, debug=0, trace_token=None,
-               perf_trace_token=None, user_project=None):
+               perf_trace_token=None, user_project=None,
+               provisional_user_project=None):
     """Performs necessary setup for interacting with the cloud storage provider.
 
     Args:
@@ -52,6 +53,7 @@ class CloudApi(object):
     self.trace_token = trace_token
     self.perf_trace_token = perf_trace_token
     self.user_project = user_project
+    self.provisional_user_project = provisional_user_project
 
   def GetBucket(self, bucket_name, provider=None, fields=None):
     """Gets Bucket metadata.

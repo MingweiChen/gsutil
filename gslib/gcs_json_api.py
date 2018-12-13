@@ -150,7 +150,8 @@ class GcsJsonApi(CloudApi):
 
   def __init__(self, bucket_storage_uri_class, logger, status_queue,
                provider=None, credentials=None, debug=0, trace_token=None,
-               perf_trace_token=None, user_project=None):
+               perf_trace_token=None, user_project=None,
+               provisional_user_project=None):
     """Performs necessary setup for interacting with Google Cloud Storage.
 
     Args:
@@ -170,7 +171,7 @@ class GcsJsonApi(CloudApi):
     super(GcsJsonApi, self).__init__(
         bucket_storage_uri_class, logger, status_queue, provider='gs',
         debug=debug, trace_token=trace_token, perf_trace_token=perf_trace_token,
-        user_project=user_project)
+        user_project=user_project, provisional_user_project=provisional_user_project)
 
     self.certs_file = GetCertsFile()
     self.http = GetNewHttp()
@@ -289,7 +290,8 @@ class GcsJsonApi(CloudApi):
 
   def GetBucketIamPolicy(self, bucket_name, provider=None, fields=None):
     apitools_request = apitools_messages.StorageBucketsGetIamPolicyRequest(
-        bucket=bucket_name, userProject=self.user_project)
+        bucket=bucket_name, userProject=self.user_project,
+        provisionalUserProject=self.provisional_user_project)
     global_params = apitools_messages.StandardQueryParameters()
     if fields:
       global_params.fields = ','.join(set(fields))
@@ -306,7 +308,8 @@ class GcsJsonApi(CloudApi):
       generation = long(generation)
     apitools_request = apitools_messages.StorageObjectsGetIamPolicyRequest(
         bucket=bucket_name, object=object_name, generation=generation,
-        userProject=self.user_project)
+        userProject=self.user_project,
+        provisionalUserProject=self.provisional_user_project)
     global_params = apitools_messages.StandardQueryParameters()
     if fields:
       global_params.fields = ','.join(set(fields))
@@ -325,7 +328,8 @@ class GcsJsonApi(CloudApi):
       generation = long(generation)
     api_request = apitools_messages.StorageObjectsSetIamPolicyRequest(
         bucket=bucket_name, object=object_name, generation=generation,
-        policy=policy, userProject=self.user_project)
+        policy=policy, userProject=self.user_project,
+        provisionalUserProject=self.provisional_user_project)
     global_params = apitools_messages.StandardQueryParameters()
     try:
       return self.api_client.objects.SetIamPolicy(
@@ -339,7 +343,8 @@ class GcsJsonApi(CloudApi):
     apitools_request = apitools_messages.StorageBucketsSetIamPolicyRequest(
         bucket=bucket_name,
         policy=policy,
-        userProject=self.user_project)
+        userProject=self.user_project,
+        provisionalUserProject=self.provisional_user_project)
     global_params = apitools_messages.StandardQueryParameters()
     try:
       return self.api_client.buckets.SetIamPolicy(
@@ -357,7 +362,8 @@ class GcsJsonApi(CloudApi):
                     .ProjectionValueValuesEnum.full)
     apitools_request = apitools_messages.StorageBucketsGetRequest(
         bucket=bucket_name, projection=projection,
-        userProject=self.user_project)
+        userProject=self.user_project,
+        provisionalUserProject=self.provisional_user_project)
     global_params = apitools_messages.StandardQueryParameters()
     if fields:
       global_params.fields = ','.join(set(fields))
@@ -453,7 +459,8 @@ class GcsJsonApi(CloudApi):
         ifMetagenerationMatch=preconditions.meta_gen_match,
         predefinedAcl=predefined_acl,
         predefinedDefaultObjectAcl=predefined_def_acl,
-        userProject=self.user_project)
+        userProject=self.user_project,
+        provisionalUserProject=self.provisional_user_project)
     global_params = apitools_messages.StandardQueryParameters()
     if fields:
       global_params.fields = ','.join(set(fields))
@@ -475,7 +482,8 @@ class GcsJsonApi(CloudApi):
         apitools_messages.StorageBucketsLockRetentionPolicyRequest(
             bucket=bucket_name,
             ifMetagenerationMatch=metageneration,
-            userProject=self.user_project))
+            userProject=self.user_project,
+            provisionalUserProject=self.provisional_user_project))
     global_params = apitools_messages.StandardQueryParameters()
     try:
       return self.api_client.buckets.LockRetentionPolicy(
@@ -504,7 +512,8 @@ class GcsJsonApi(CloudApi):
 
     apitools_request = apitools_messages.StorageBucketsInsertRequest(
         bucket=metadata, project=project_id, projection=projection,
-        userProject=self.user_project)
+        userProject=self.user_project,
+        provisionalUserProject=self.provisional_user_project)
     global_params = apitools_messages.StandardQueryParameters()
     if fields:
       global_params.fields = ','.join(set(fields))
@@ -521,7 +530,8 @@ class GcsJsonApi(CloudApi):
 
     apitools_request = apitools_messages.StorageBucketsDeleteRequest(
         bucket=bucket_name, ifMetagenerationMatch=preconditions.meta_gen_match,
-        userProject=self.user_project)
+        userProject=self.user_project,
+        provisionalUserProject=self.provisional_user_project)
 
     try:
       self.api_client.buckets.Delete(apitools_request)
@@ -549,7 +559,8 @@ class GcsJsonApi(CloudApi):
 
     apitools_request = apitools_messages.StorageBucketsListRequest(
         project=project_id, maxResults=NUM_BUCKETS_PER_LIST_PAGE,
-        projection=projection, userProject=self.user_project)
+        projection=projection, userProject=self.user_project,
+        provisionalUserProject=self.provisional_user_project)
     global_params = apitools_messages.StandardQueryParameters()
     if fields:
       if 'nextPageToken' not in fields:
@@ -568,7 +579,8 @@ class GcsJsonApi(CloudApi):
       apitools_request = apitools_messages.StorageBucketsListRequest(
           project=project_id, pageToken=bucket_list.nextPageToken,
           maxResults=NUM_BUCKETS_PER_LIST_PAGE, projection=projection,
-          userProject=self.user_project)
+          userProject=self.user_project,
+          provisionalUserProject=self.provisional_user_project)
       try:
         bucket_list = self.api_client.buckets.List(apitools_request,
                                                    global_params=global_params)
@@ -595,7 +607,8 @@ class GcsJsonApi(CloudApi):
     apitools_request = apitools_messages.StorageObjectsListRequest(
         bucket=bucket_name, prefix=prefix, delimiter=delimiter,
         versions=all_versions, projection=projection,
-        maxResults=NUM_OBJECTS_PER_LIST_PAGE, userProject=self.user_project)
+        maxResults=NUM_OBJECTS_PER_LIST_PAGE, userProject=self.user_project,
+        provisionalUserProject=self.provisional_user_project)
     global_params = apitools_messages.StandardQueryParameters()
 
     if fields:
@@ -621,7 +634,8 @@ class GcsJsonApi(CloudApi):
           bucket=bucket_name, prefix=prefix, delimiter=delimiter,
           versions=all_versions, projection=projection,
           pageToken=next_page_token, maxResults=NUM_OBJECTS_PER_LIST_PAGE,
-          userProject=self.user_project)
+          userProject=self.user_project,
+          provisionalUserProject=self.provisional_user_project)
       try:
         object_list = self.api_client.objects.List(apitools_request,
                                                    global_params=global_params)
@@ -816,7 +830,8 @@ class GcsJsonApi(CloudApi):
 
     return apitools_messages.StorageObjectsGetRequest(
         bucket=bucket_name, object=object_name, projection=projection,
-        generation=generation, userProject=self.user_project)
+        generation=generation, userProject=self.user_project,
+        provisionalUserProject=self.provisional_user_project)
 
   def _GetApitoolsObjectMetadataGlobalParams(self, fields=None):
     global_params = apitools_messages.StandardQueryParameters()
@@ -979,7 +994,8 @@ class GcsJsonApi(CloudApi):
     apitools_download.bytes_http = self.authorized_download_http
     apitools_request = apitools_messages.StorageObjectsGetRequest(
         bucket=bucket_name, object=object_name, generation=generation,
-        userProject=self.user_project)
+        userProject=self.user_project,
+        provisionalUserProject=self.provisional_user_project)
 
     # Disable retries in apitools. We will handle them explicitly for
     # resumable downloads; one-shot downloads are not retryable as we do
@@ -1098,7 +1114,8 @@ class GcsJsonApi(CloudApi):
 
   def PatchObjectMetadata(self, bucket_name, object_name, metadata,
                           canned_acl=None, generation=None, preconditions=None,
-                          provider=None, fields=None, user_project=None):
+                          provider=None, fields=None, user_project=None,
+                          provisional_user_project=None):
     """See CloudApi class for function doc strings."""
     projection = (apitools_messages.StorageObjectsPatchRequest
                   .ProjectionValueValuesEnum.noAcl)
@@ -1127,7 +1144,8 @@ class GcsJsonApi(CloudApi):
         generation=generation, projection=projection,
         ifGenerationMatch=preconditions.gen_match,
         ifMetagenerationMatch=preconditions.meta_gen_match,
-        predefinedAcl=predefined_acl, userProject=self.user_project)
+        predefinedAcl=predefined_acl, userProject=self.user_project,
+        provisionalUserProject=self.provisional_user_project)
     global_params = apitools_messages.StandardQueryParameters()
     if fields:
       global_params.fields = ','.join(set(fields))
@@ -1206,7 +1224,8 @@ class GcsJsonApi(CloudApi):
             bucket=object_metadata.bucket, object=object_metadata,
             ifGenerationMatch=preconditions.gen_match,
             ifMetagenerationMatch=preconditions.meta_gen_match,
-            predefinedAcl=predefined_acl, userProject=self.user_project)
+            predefinedAcl=predefined_acl, userProject=self.user_project,
+            provisionalUserProject=self.provisional_user_project)
         global_params = apitools_messages.StandardQueryParameters()
         if fields:
           global_params.fields = ','.join(set(fields))
@@ -1494,7 +1513,8 @@ class GcsJsonApi(CloudApi):
               destinationPredefinedAcl=predefined_acl,
               rewriteToken=resume_rewrite_token,
               maxBytesRewrittenPerCall=max_bytes_per_call,
-              userProject=self.user_project)
+              userProject=self.user_project,
+              provisionalUserProject=self.provisional_user_project)
           rewrite_response = self.api_client.objects.Rewrite(
               apitools_request, global_params=global_params)
         bytes_written = long(rewrite_response.totalBytesRewritten)
@@ -1668,7 +1688,8 @@ class GcsJsonApi(CloudApi):
       request = apitools_messages.StorageNotificationsInsertRequest(
           bucket=bucket_name,
           notification=notification,
-          userProject=self.user_project)
+          userProject=self.user_project,
+          provisionalUserProject=self.provisional_user_project)
       return self.api_client.notifications.Insert(request)
     except TRANSLATABLE_APITOOLS_EXCEPTIONS, e:
       self._TranslateExceptionAndRaise(e)
@@ -1682,7 +1703,8 @@ class GcsJsonApi(CloudApi):
       request = apitools_messages.StorageNotificationsDeleteRequest(
           bucket=bucket_name,
           notification=notification,
-          userProject=self.user_project)
+          userProject=self.user_project,
+          provisionalUserProject=self.provisional_user_project)
       return self.api_client.notifications.Delete(request)
     except TRANSLATABLE_APITOOLS_EXCEPTIONS, e:
       self._TranslateExceptionAndRaise(e)
@@ -1691,7 +1713,8 @@ class GcsJsonApi(CloudApi):
     """See CloudApi class for function doc strings."""
     try:
       request = apitools_messages.StorageNotificationsListRequest(
-          bucket=bucket_name, userProject=self.user_project)
+          bucket=bucket_name, userProject=self.user_project,
+          provisionalUserProject=self.provisional_user_project)
       response = self.api_client.notifications.List(request)
       for notification in response.items:
         yield notification

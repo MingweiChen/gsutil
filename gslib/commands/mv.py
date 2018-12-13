@@ -154,6 +154,7 @@ class MvCommand(Command):
     self.command_runner.RunNamedCommand(
         'cp', args=unparsed_args, headers=self.headers, debug=self.debug,
         trace_token=self.trace_token, user_project=self.user_project,
+        provisional_user_project=self.provisional_user_project,
         parallel_operations=self.parallel_operations)
 
     return 0

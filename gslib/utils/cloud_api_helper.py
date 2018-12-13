@@ -42,7 +42,8 @@ def GetCloudApiInstance(cls, thread_state=None):
 
 
 def GetDownloadSerializationData(
-    src_obj_metadata, progress=0, user_project=None):
+    src_obj_metadata, progress=0, user_project=None,
+    provisional_user_project=None):
   """Returns download serialization data.
 
   There are five entries:
@@ -66,7 +67,8 @@ def GetDownloadSerializationData(
   url = src_obj_metadata.mediaLink
   if user_project:
     url = AddQueryParamToUrl(url, 'userProject', user_project)
-
+  if provisional_user_project:
+    url = AddQueryParamToUrl(url, 'provisionalUserProject', provisional_user_project)
   serialization_dict = {
       'auto_transfer': 'False',
       'progress': progress,

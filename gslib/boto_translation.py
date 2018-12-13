@@ -167,7 +167,8 @@ class BotoTranslation(CloudApi):
 
   def __init__(self, bucket_storage_uri_class, logger, status_queue,
                provider=None, credentials=None, debug=0, trace_token=None,
-               perf_trace_token=None, user_project=None):
+               perf_trace_token=None, user_project=None,
+               provisional_user_project=None):
     """Performs necessary setup for interacting with the cloud storage provider.
 
     Args:

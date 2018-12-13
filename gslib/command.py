@@ -532,7 +532,7 @@ class Command(HelpProvider):
                parallel_operations, bucket_storage_uri_class,
                gsutil_api_class_map_factory, logging_filters=None,
                command_alias_used=None, perf_trace_token=None,
-               user_project=None):
+               user_project=None, provisional_user_project=None):
     """Instantiates a Command.
 
     Args:
@@ -570,6 +570,7 @@ class Command(HelpProvider):
     self.perf_trace_token = perf_trace_token
     self.parallel_operations = parallel_operations
     self.user_project = user_project
+    self.provisional_user_project = provisional_user_project
     self.bucket_storage_uri_class = bucket_storage_uri_class
     self.gsutil_api_class_map_factory = gsutil_api_class_map_factory
     self.exclude_symlinks = False
@@ -633,7 +634,8 @@ class Command(HelpProvider):
         MainThreadUIQueue(sys.stderr, ui_controller),
         debug=self.debug, trace_token=self.trace_token,
         perf_trace_token=self.perf_trace_token,
-        user_project=self.user_project)
+        user_project=self.user_project,
+        provisional_user_project=self.provisional_user_project)
     # Cross-platform path to run gsutil binary.
     self.gsutil_cmd = ''
     # If running on Windows, invoke python interpreter explicitly.
@@ -759,7 +761,8 @@ class Command(HelpProvider):
           self.bucket_storage_uri_class, self.gsutil_api_map,
           logging.getLogger('dummy'), glob_status_queue, debug=self.debug,
           trace_token=self.trace_token, perf_trace_token=self.perf_trace_token,
-          user_project=self.user_project)
+          user_project=self.user_project,
+          provisional_user_project=self.provisional_user_project)
     return self.seek_ahead_gsutil_api
 
   def RunCommand(self):
@@ -1443,7 +1446,8 @@ class Command(HelpProvider):
     # Create a WorkerThread to handle all of the logic needed to actually call
     # the function. Note that this thread will never be started, and all work
     # is done in the current thread.
-    worker_thread = WorkerThread(None, False, user_project=self.user_project)
+    worker_thread = WorkerThread(None, False, user_project=self.user_project,
+      provisional_user_project=self.provisional_user_project)
     args_iterator = iter(args_iterator)
     # Count of sequential calls that have been made. Used for producing
     # suggestion to use gsutil -m.
@@ -1583,7 +1587,8 @@ class Command(HelpProvider):
             thread_count, self.logger, task_queue=task_queue,
             bucket_storage_uri_class=self.bucket_storage_uri_class,
             gsutil_api_map=self.gsutil_api_map, debug=self.debug,
-            status_queue=glob_status_queue, user_project=self.user_project)
+            status_queue=glob_status_queue, user_project=self.user_project,
+            provisional_user_project=self.provisional_user_project)
 
     if process_count > 1:  # Handle process pool creation.
       # Check whether this call will need a new set of workers.
@@ -1624,7 +1629,8 @@ class Command(HelpProvider):
                 thread_count, self.logger, task_queue=task_queue,
                 bucket_storage_uri_class=self.bucket_storage_uri_class,
                 gsutil_api_map=self.gsutil_api_map, debug=self.debug,
-                status_queue=glob_status_queue, user_project=self.user_project)
+                status_queue=glob_status_queue, user_project=self.user_project,
+                provisional_user_project=self.provisional_user_project)
         finally:
           worker_checking_level_lock.release()
 
@@ -1755,7 +1761,8 @@ class Command(HelpProvider):
         thread_count, self.logger, worker_semaphore=worker_semaphore,
         bucket_storage_uri_class=self.bucket_storage_uri_class,
         gsutil_api_map=self.gsutil_api_map, debug=self.debug,
-        status_queue=status_queue, user_project=self.user_project)
+        status_queue=status_queue, user_project=self.user_project,
+        provisional_user_project=self.provisional_user_project)
 
     num_enqueued = 0
     while True:
@@ -2029,7 +2036,7 @@ class WorkerPool(object):
   def __init__(self, thread_count, logger, worker_semaphore=None,
                task_queue=None, bucket_storage_uri_class=None,
                gsutil_api_map=None, debug=0, status_queue=None,
-               user_project=None):
+               user_project=None, provisional_user_project=None):
     # In the multi-process case, a worker sempahore is required to ensure
     # even work distribution.
     #
@@ -2041,6 +2048,7 @@ class WorkerPool(object):
     # Thus, exactly one of task_queue or worker_semaphore must be provided.
     assert (worker_semaphore is None) != (task_queue is None)
     self.user_project = user_project
+    self.provisional_user_project = provisional_user_project
 
     self.task_queue = task_queue or _NewThreadsafeQueue()
     self.threads = []
@@ -2049,7 +2057,8 @@ class WorkerPool(object):
           self.task_queue, logger, worker_semaphore=worker_semaphore,
           bucket_storage_uri_class=bucket_storage_uri_class,
           gsutil_api_map=gsutil_api_map, debug=debug, status_queue=status_queue,
-          user_project=self.user_project)
+          user_project=self.user_project,
+          provisional_user_project=self.provisional_user_project)
       self.threads.append(worker_thread)
       worker_thread.start()
 
@@ -2076,7 +2085,8 @@ class WorkerThread(threading.Thread):
 
   def __init__(self, task_queue, logger, worker_semaphore=None,
                bucket_storage_uri_class=None, gsutil_api_map=None, debug=0,
-               status_queue=None, user_project=None):
+               status_queue=None, user_project=None,
+               provisional_user_project=None):
     """Initializes the worker thread.
 
     Args:
@@ -2104,6 +2114,7 @@ class WorkerThread(threading.Thread):
     self.cached_classes = {}
     self.shared_vars_updater = _SharedVariablesUpdater()
     self.user_project = user_project
+    self.provisional_user_project = provisional_user_project
 
     # Note that thread_gsutil_api is not initialized in the sequential
     # case; task functions should use utils.cloud_api_helper.GetCloudApiInstance

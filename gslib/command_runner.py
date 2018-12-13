@@ -274,7 +274,7 @@ class CommandRunner(object):
                       trace_token=None, parallel_operations=False,
                       skip_update_check=False, logging_filters=None,
                       do_shutdown=True, perf_trace_token=None,
-                      user_project=None,
+                      user_project=None, provisional_user_project=None,
                       collect_analytics=False):
     """Runs the named command.
 
@@ -358,7 +358,8 @@ class CommandRunner(object):
         self, args, headers, debug, trace_token, parallel_operations,
         self.bucket_storage_uri_class, self.gsutil_api_class_map_factory,
         logging_filters, command_alias_used=command_name,
-        perf_trace_token=perf_trace_token, user_project=user_project)
+        perf_trace_token=perf_trace_token, user_project=user_project,
+        provisional_user_project=provisional_user_project)
 
     # Log the command name, command alias, and sub-options after being parsed by
     # RunCommand and the command constructor. For commands with subcommands and

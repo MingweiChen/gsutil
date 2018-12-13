@@ -43,7 +43,8 @@ class CloudApiDelegator(CloudApi):
 
   def __init__(self, bucket_storage_uri_class, gsutil_api_map, logger,
                status_queue, provider=None, debug=0, trace_token=None,
-               perf_trace_token=None, user_project=None):
+               perf_trace_token=None, user_project=None,
+               provisional_user_project=None):
     """Performs necessary setup for delegating cloud storage requests.
 
     This function has different arguments than the gsutil Cloud API __init__
@@ -68,7 +69,8 @@ class CloudApiDelegator(CloudApi):
                                             provider=provider, debug=debug,
                                             trace_token=trace_token,
                                             perf_trace_token=perf_trace_token,
-                                            user_project=user_project)
+                                            user_project=user_project,
+                                            provisional_user_project=provisional_user_project)
     self.api_map = gsutil_api_map
     self.prefer_api = boto.config.get('GSUtil', 'prefer_api', '').upper()
     self.loaded_apis = {}
@@ -129,7 +131,8 @@ class CloudApiDelegator(CloudApi):
             debug=self.debug,
             trace_token=self.trace_token,
             perf_trace_token=self.perf_trace_token,
-            user_project=self.user_project))
+            user_project=self.user_project,
+            provisional_user_project=self.provisional_user_project))
 
   def GetApiSelector(self, provider=None):
     """Returns a cs_api_map.ApiSelector based on input and configuration.
