@@ -283,7 +283,8 @@ def main():
 
   try:
     try:
-      opts, args = getopt.getopt(sys.argv[1:], 'dDvo:h:u:mq',
+      # Enroll the provisional user project here
+      opts, args = getopt.getopt(sys.argv[1:], 'dDvo:h:uU:mq',
                                  ['debug', 'detailedDebug', 'version', 'option',
                                   'help', 'header', 'multithreaded', 'quiet',
                                   'testexceptiontraces', 'trace-token=',
@@ -316,7 +317,8 @@ def main():
         quiet = True
       elif o == '-u':
         user_project = a
-      elif o in ('-U', '--provisional-user-project'):
+      elif o == ('-U', '--provisional-user-project'):
+        print("i am here")
         provisional_user_project = a
       elif o in ('-v', '--version'):
         version = True
