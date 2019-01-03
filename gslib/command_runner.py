@@ -352,6 +352,27 @@ class CommandRunner(object):
 
     HandleArgCoding(args)
     HandleHeaderCoding(headers)
+    
+    def GetProvisionalUserProject(provisional_user_project):
+      """Get the provisional user project
+
+      Used to determine which provisional user project should be sent 
+      to API.
+
+      Args:
+        provisional_user_project: The provisional user project specifed
+        in user's command.
+
+      Returns:
+        Provisional user project specified in boto configuration file
+        if CLI privisional user project value is not provided.
+      """
+      boto_provisional_user_project = (
+        boto.config.get_value('GSUtil', 'provisional_user_project'))
+      if provisional_user_project:
+        return provisional_user_project
+      else:
+        return boto_provisional_user_project    
 
     command_class = self.command_map[command_name]
     command_inst = command_class(
@@ -359,8 +380,8 @@ class CommandRunner(object):
         self.bucket_storage_uri_class, self.gsutil_api_class_map_factory,
         logging_filters, command_alias_used=command_name,
         perf_trace_token=perf_trace_token, user_project=user_project,
-        provisional_user_project=provisional_user_project)
-    print(user_project)
+        provisional_user_project=(
+          GetProvisionalUserProject(provisional_user_project)))
 
     # Log the command name, command alias, and sub-options after being parsed by
     # RunCommand and the command constructor. For commands with subcommands and
