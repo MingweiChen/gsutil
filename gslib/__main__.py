@@ -284,11 +284,11 @@ def main():
   try:
     try:
       # Enroll the provisional user project here
-      opts, args = getopt.getopt(sys.argv[1:], 'dDvo:h:uU:mq',
+      opts, args = getopt.getopt(sys.argv[1:], 'dDvo:h:U:mq',
                                  ['debug', 'detailedDebug', 'version', 'option',
                                   'help', 'header', 'multithreaded', 'quiet',
                                   'testexceptiontraces', 'trace-token=',
-                                  'perf-trace-token='])
+                                  'perf-trace-token=','provisional-user-project='])
     except getopt.GetoptError as e:
       _HandleCommandException(CommandException(e.msg))
     for o, a in opts:
@@ -316,8 +316,9 @@ def main():
       elif o in ('-q', '--quiet'):
         quiet = True
       elif o == '-u':
+        print("u are here")
         user_project = a
-      elif o == ('-U', '--provisional-user-project'):
+      elif o in ('-U', '--provisional-user-project'):
         print("i am here")
         provisional_user_project = a
       elif o in ('-v', '--version'):
@@ -401,7 +402,9 @@ def main():
 
     if os.environ.get('_ARGCOMPLETE', '0') == '1':
       return _PerformTabCompletion(command_runner)
-
+    print ("main function")
+    print (provisional_user_project)
+    print ("end ------- main function")
     return _RunNamedCommandAndHandleExceptions(
         command_runner, command_name, args=args[1:], headers=headers,
         debug_level=debug_level, trace_token=trace_token,
@@ -585,6 +588,7 @@ def _RunNamedCommandAndHandleExceptions(
     if not system_util.IS_WINDOWS:
       RegisterSignalHandler(signal.SIGQUIT, _HandleSigQuit)
 
+    print(provisional_user_project)
     return command_runner.RunNamedCommand(command_name, args, headers,
                                           debug_level, trace_token,
                                           parallel_operations,

@@ -360,6 +360,7 @@ class CommandRunner(object):
         logging_filters, command_alias_used=command_name,
         perf_trace_token=perf_trace_token, user_project=user_project,
         provisional_user_project=provisional_user_project)
+    print(user_project)
 
     # Log the command name, command alias, and sub-options after being parsed by
     # RunCommand and the command constructor. For commands with subcommands and

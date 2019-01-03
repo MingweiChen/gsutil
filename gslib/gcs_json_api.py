@@ -559,8 +559,9 @@ class GcsJsonApi(CloudApi):
 
     apitools_request = apitools_messages.StorageBucketsListRequest(
         project=project_id, maxResults=NUM_BUCKETS_PER_LIST_PAGE,
-        projection=projection, userProject=self.user_project,
-        provisionalUserProject=self.provisional_user_project)
+        projection=projection, 
+        provisionalUserProject=self.provisional_user_project,
+        userProject=self.user_project)
     global_params = apitools_messages.StandardQueryParameters()
     if fields:
       if 'nextPageToken' not in fields:
@@ -579,8 +580,8 @@ class GcsJsonApi(CloudApi):
       apitools_request = apitools_messages.StorageBucketsListRequest(
           project=project_id, pageToken=bucket_list.nextPageToken,
           maxResults=NUM_BUCKETS_PER_LIST_PAGE, projection=projection,
-          userProject=self.user_project,
-          provisionalUserProject=self.provisional_user_project)
+          provisionalUserProject=self.provisional_user_project,
+          userProject=self.user_project)
       try:
         bucket_list = self.api_client.buckets.List(apitools_request,
                                                    global_params=global_params)
