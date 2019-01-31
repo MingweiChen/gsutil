@@ -165,6 +165,8 @@ class GcsJsonApi(CloudApi):
       trace_token: Trace token to pass to the API implementation.
       perf_trace_token: Performance trace token to use when making API calls.
       user_project: Project to be billed for this request.
+      provisional_user_project: Project to be billed for this request if
+                                user project isn't specified.
     """
     # TODO: Plumb host_header for perfdiag / test_perfdiag.
     # TODO: Add jitter to apitools' http_wrapper retry mechanism.
