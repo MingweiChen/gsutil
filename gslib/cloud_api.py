@@ -44,6 +44,8 @@ class CloudApi(object):
                    implementation (string).
       perf_trace_token: Performance trace token to use when making API calls.
       user_project: Project to be billed for this request.
+      provisional_user_project: Project to be billed for this request if
+                                user project is not specified.
     """
     self.bucket_storage_uri_class = bucket_storage_uri_class
     self.logger = logger

@@ -63,6 +63,8 @@ class CloudApiDelegator(CloudApi):
       trace_token: Apiary trace token to pass to API.
       perf_trace_token: Performance trace token to use when making API calls.
       user_project: Project to be billed for this project.
+      provisional_user_project: Project to be billed for this request if
+                                user project is not specified.
     """
     super(CloudApiDelegator, self).__init__(bucket_storage_uri_class, logger,
                                             status_queue,

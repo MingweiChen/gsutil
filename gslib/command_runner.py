@@ -294,6 +294,8 @@ class CommandRunner(object):
       perf_trace_token: Performance measurement trace token to pass to the
           underlying API.
       user_project: The project to bill this request to.
+      provisional_user_project: The project to bill this request to if user
+          project is not specifed.
       collect_analytics: Set to True to collect an analytics metric logging this
           command.
 
@@ -361,7 +363,7 @@ class CommandRunner(object):
 
       Args:
         provisional_user_project: The provisional user project specifed
-        in user's command.
+            in user's command.
 
       Returns:
         Provisional user project specified in boto configuration file
