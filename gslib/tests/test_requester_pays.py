@@ -29,7 +29,7 @@ OBJECT_CONTENTS = 'innards'
 
 
 @SkipForS3('gsutil doesn\'t support S3 Requester Pays.')
-@SkipForXML('Requester Pays is not supported for the XML API.')
+# @SkipForXML('Requester Pays is not supported for the XML API.')
 class TestRequesterPays(testcase.GsUtilIntegrationTestCase):
   """Integration tests for Requester Pays.
 

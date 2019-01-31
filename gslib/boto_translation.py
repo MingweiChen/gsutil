@@ -188,7 +188,8 @@ class BotoTranslation(CloudApi):
     """
     super(BotoTranslation, self).__init__(
         bucket_storage_uri_class, logger, status_queue, provider=provider,
-        debug=debug, trace_token=trace_token, perf_trace_token=perf_trace_token)
+        debug=debug, trace_token=trace_token, perf_trace_token=perf_trace_token,
+        user_project=user_project, provisional_user_project=provisional_user_project)
     _ = credentials
     # pylint: disable=global-variable-undefined, global-variable-not-assigned
     global boto_auth_initialized, boto_auth_initialized_lock
@@ -303,6 +304,9 @@ class BotoTranslation(CloudApi):
         error_page = metadata.website.notFoundPage
         bucket_uri.set_website_config(main_page_suffix, error_page,
                                       headers=headers)
+      if metadata.billing:
+        requester_pays = metadata.billing.requester_pays
+        bucket_uri.configure_billing(requester_pays, headers=headers)
       return self.GetBucket(bucket_name, fields=fields)
     except TRANSLATABLE_BOTO_EXCEPTIONS, e:
       self._TranslateExceptionAndRaise(e, bucket_name=bucket_name)
@@ -819,8 +823,9 @@ class BotoTranslation(CloudApi):
       # The XML API does not support if-generation-match for GET requests.
       # Therefore, if the object gets overwritten before the ACL and get_key
       # operations, the best we can do is warn that it happened.
+      headers = self._CreateBaseHeaders()
       self._SetObjectAcl(object_metadata, dst_uri)
-      return self._BotoKeyToObject(dst_uri.get_key(), fields=fields)
+      return self._BotoKeyToObject(dst_uri.get_key(headers=headers), fields=fields)
     except boto.exception.InvalidUriError as e:
       if e.message and NON_EXISTENT_OBJECT_REGEX.match(e.message.encode(UTF8)):
         raise CommandException('\n'.join(textwrap.wrap(
@@ -1055,6 +1060,11 @@ class BotoTranslation(CloudApi):
       base_headers['x-goog-api-version'] = self.api_version
     if self.provider == 'gs' and self.perf_trace_token:
       base_headers['cookie'] = self.perf_trace_token
+    if self.provider == 'gs' and self.user_project:
+      base_headers['x-goog-user-project'] = self.user_project
+    # Only if user project isn't present, provisional user project will be passed in.
+    elif self.provider == 'gs' and self.provisional_ser_project:
+      base_headers['x-goog-provisional-user-project'] = self.provisional_user_project
 
     return base_headers
 
@@ -1151,7 +1161,7 @@ class BotoTranslation(CloudApi):
     if self.provider == 'gs':
       if not fields or 'storageClass' in fields:
         if hasattr(bucket, 'get_storage_class'):
-          cloud_api_bucket.storageClass = bucket.get_storage_class()
+          cloud_api_bucket.storageClass = bucket.get_storage_class(headers)
       if not fields or 'acl' in fields:
         try:
           for acl in AclTranslation.BotoBucketAclToMessage(
@@ -1247,13 +1257,22 @@ class BotoTranslation(CloudApi):
           self._TranslateExceptionAndRaise(e, bucket_name=bucket.name)
       if not fields or 'location' in fields:
         cloud_api_bucket.location = bucket_uri.get_location(headers=headers)
+      if not fields or 'billing' in fields:
+        boto_billing = bucket_uri.get_billing_config(headers=headers)
+        if boto_billing and 'BillingConfiguration' in boto_billing:
+          billing_config = boto_billing['BillingConfiguration']
+          requester_pays_present = 'RequesterPays' in billing_config
+          if requester_pays_present:
+            cloud_api_bucket.billing = apitools_messages.Bucket.BillingValue()
+            cloud_api_bucket.billing.requesterPays = (
+                billing_config['RequesterPays'] == 'Enabled')
       # End gs-specific field checks.
     if not fields or 'labels' in fields:
       try:
         # TODO: Define tags-related methods on storage_uri objects. In the
         # meantime, we invoke the underlying bucket's methods directly.
         try:
-          boto_tags = bucket_uri.get_bucket().get_tags()
+          boto_tags = bucket_uri.get_bucket().get_tags(headers)
           cloud_api_bucket.labels = (
               LabelTranslation.BotoTagsToMessage(boto_tags))
         except boto.exception.StorageResponseError, e:
@@ -1732,7 +1751,7 @@ class BotoTranslation(CloudApi):
           debug=self.debug)
       # TODO: Define tags-related methods on storage_uri objects. In the
       # meantime, we invoke the underlying bucket's methods directly.
-      tagging_config_xml = uri.get_bucket().get_xml_tags()
+      tagging_config_xml = uri.get_bucket().get_xml_tags(headers)
     except TRANSLATABLE_BOTO_EXCEPTIONS, e:
       self._TranslateExceptionAndRaise(e)
 

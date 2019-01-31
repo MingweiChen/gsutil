@@ -54,6 +54,8 @@ CONTENT_LANGUAGE_REGEX = re.compile(r'^content-language', re.I)
 CONTENT_MD5_REGEX = re.compile(r'^content-md5', re.I)
 CONTENT_TYPE_REGEX = re.compile(r'^content-type', re.I)
 GOOG_API_VERSION_REGEX = re.compile(r'^x-goog-api-version', re.I)
+GOOG_USER_PROJECT_REGEX = re.compile(r'^x-goog-user-project', re.I)
+GOOG_PROVISIONAL_USER_PROJECT_REGEX = re.compile(r'^x-goog-provisional-user-project', re.I)
 GOOG_GENERATION_MATCH_REGEX = re.compile(r'^x-goog-if-generation-match', re.I)
 GOOG_METAGENERATION_MATCH_REGEX = re.compile(
     r'^x-goog-if-metageneration-match', re.I)
@@ -125,6 +127,12 @@ def ObjectMetadataFromHeaders(headers):
     elif GOOG_API_VERSION_REGEX.match(header):
       # API version is only relevant for XML, ignore and rely on the XML API
       # to add the appropriate version.
+      continue
+    elif GOOG_USER_PROJECT_REGEX.match(header):
+      # Allow user project header through.
+      continue
+    elif GOOG_PROVISIONAL_USER_PROJECT_REGEX.match(header):
+      # Allow provisional user project header through.
       continue
     elif GOOG_GENERATION_MATCH_REGEX.match(header):
       # Preconditions are handled elsewhere, but allow these headers through.
