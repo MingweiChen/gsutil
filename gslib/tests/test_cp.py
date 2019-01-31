@@ -466,6 +466,20 @@ class TestCp(testcase.GsUtilIntegrationTestCase):
       self.assertIn('Skipping existing item: %s' % suri(f), stderr)
       self.assertEqual(f.read(), 'bar')
 
+  @SequentialAndParallelTransfer
+  def test_noclobber_different_size(self):
+    key_uri = self.CreateObject(contents='foo')
+    fpath = self.CreateTempFile(contents='quux')
+    stderr = self.RunGsUtil(['cp', '-n', fpath, suri(key_uri)],
+                            return_stderr=True)
+    self.assertIn('Skipping existing item: %s' % suri(key_uri), stderr)
+    self.assertEqual(key_uri.get_contents_as_string(), 'foo')
+    stderr = self.RunGsUtil(['cp', '-n', suri(key_uri), fpath],
+                            return_stderr=True)
+    with open(fpath, 'r') as f:
+      self.assertIn('Skipping existing item: %s' % suri(f), stderr)
+      self.assertEqual(f.read(), 'quux')
+
   def test_dest_bucket_not_exist(self):
     fpath = self.CreateTempFile(contents='foo')
     invalid_bucket_uri = (
@@ -2949,6 +2963,15 @@ class TestCp(testcase.GsUtilIntegrationTestCase):
       self.assertFalse(os.path.isfile(tracker_filename))
       self.assertFalse(os.path.isfile('%s_.gztmp' % fpath2))
 
+  def _GetFaviconFile(self):
+    # Make a temp file from favicon.ico.gz. Finding the location of our test
+    # data varies depending on how/where gsutil was installed, so we get the
+    # data via pkgutil and use this workaround.
+    if not hasattr(self, 'test_data_favicon_file'):
+      contents = pkgutil.get_data('gslib', 'tests/test_data/favicon.ico.gz')
+      self.test_data_favicon_file = self.CreateTempFile(contents=contents)
+    return self.test_data_favicon_file
+
   def test_cp_download_transfer_encoded(self):
     """Tests chunked transfer encoded download handling.
 
@@ -2963,8 +2986,7 @@ class TestCp(testcase.GsUtilIntegrationTestCase):
     # gsutil cp -Z) won't reproduce the bytes that trigger this problem.
     bucket_uri = self.CreateBucket()
     object_uri = self.CreateObject(bucket_uri=bucket_uri, object_name='foo')
-    input_filename = os.path.join(
-        gslib.GSLIB_DIR, 'tests/test_data/favicon.ico.gz')
+    input_filename = self._GetFaviconFile()
     self.RunGsUtil(['-h', 'Content-Encoding:gzip',
                     '-h', 'Content-Type:image/x-icon',
                     'cp', suri(input_filename), suri(object_uri)])

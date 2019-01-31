@@ -1,3 +1,49 @@
+Release 4.36 (release date: 2019-01-28)
+=======================================
+New features
+------------------
+- Added Bucket Policy Only support to gsutil. This includes a new
+  "bucketpolicyonly" command to get/set BPO on existing buckets, as well adding
+  the ability to set BPO at bucket creation time with "mb -b". Currently, your
+  project must be whitelisted for use with the new BPO functionality. This
+  restriction will be lifted in the near future.
+
+Bug Fixes
+------------------
+- Fixed a bug where "cp -n" would overwrite a local file at the destination if
+  its size differed from the source's size.
+
+Other Changes
+------------------
+- Updated crcmod installation instructions for enterprise SUSE systems.
+
+
+Release 4.35 (release date: 2018-12-18)
+=======================================
+New features
+------------------
+- Added -u option to rsync; this will skip copying files/objects that are newer
+  (as determined by checking mtime) at the destination.
+
+Bug Fixes
+------------------
+- The "iam ch" command now allows supplying custom IAM roles.
+- Fixed an issue where debug output was not displaying all of the loaded config
+  files under the "config path(s)" label.
+- Disabled running with multiple processes when running on Alpine Linux, as this
+  would sometimes cause gsutil to hang forever. Running with multiple threads is
+  still allowed.
+- The "rsync" command now prints log messages during synchronization to indicate
+  when symlinks are being skipped.
+- The "Boto:ca_certificates_file" config option can now be overridden using
+  the -o option.
+
+Other Changes
+------------------
+- Disallowed installing gsutil on Python versions != 2.7.
+- Several documentation updates and clarifications.
+
+
 Release 4.34 (release date: 2018-09-11)
 =======================================
 New features
