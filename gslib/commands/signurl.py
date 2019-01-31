@@ -207,7 +207,7 @@ def _DurationToTimeDelta(duration):
 
 
 def _GenSignedUrl(key, client_id, method, duration,
-                  gcs_path, logger, region,
+                  gcs_path, user_project, provisional_user_project, logger, region,
                   content_type=None, string_to_sign_debug=False):
   """Construct a string to sign with the provided key.
 
@@ -218,6 +218,8 @@ def _GenSignedUrl(key, client_id, method, duration,
     duration: timedelta for which the constructed signed URL should be valid.
     gcs_path: String path to the bucket of object for signing, in the form
         'bucket' or 'bucket/object'.
+    user_project: User project query parameter to include in signature.
+    provisional_user_project: Provisional user project query parameter to include in signature.
     logger: logging.Logger for warning and debug output.
     region: Geographic region in which the requested resource resides.
     content_type: Optional Content-Type for the signed URL. HTTP requests using
@@ -257,6 +259,10 @@ def _GenSignedUrl(key, client_id, method, duration,
   signed_query_params['x-goog-signedheaders'] = ';'.join(
       sorted(signed_headers.keys()))
   signed_query_params['x-goog-expires'] = '%d' % duration.total_seconds()
+  if user_project:
+    signed_query_params['userProject'] = user_project
+  if provisional_user_project:
+    signed_query_params['provisionalUserProject'] = provisional_user_project
 
   canonical_resource = '/{}'.format(gcs_path)
   canonical_query_string = '&'.join(
@@ -418,7 +424,8 @@ class UrlSignCommand(Command):
     # Choose a reasonable time in the future; if the user's system clock is
     # 60 or more seconds behind the server's this will generate an error.
     signed_url = _GenSignedUrl(key, client_email, 'HEAD', timedelta(seconds=60),
-                               gcs_path, logger, region)
+                               gcs_path, self.user_project, self.provisional_user_project, 
+                               logger, region)
 
     try:
       h = GetNewHttp()
@@ -509,18 +516,37 @@ class UrlSignCommand(Command):
             _, bucket = self.GetSingleBucketUrlFromArg(
                 'gs://{}'.format(url.bucket_name), bucket_fields=['location'])
           except Exception, e:
-            raise CommandException(
-                '{}: Failed to auto-detect location for bucket \'{}\'. Please '
-                'ensure you have storage.buckets.get permission on the bucket '
-                'or specify the bucket\'s location using the \'-r\' option.'
-                .format(e.__class__.__name__, url.bucket_name))
+            if self.user_project:
+              raise CommandException(
+                  '{}: Failed to auto-detect location for bucket \'{}\'. '
+                  'Please ensure you have storage.buckets.get permission on '
+                  'the bucket and serviceusage.services.use permission on {}, '
+                  'or specify the bucket\'s location using the \'-r\' '
+                  'option.'.format(e.__class__.__name__, url.bucket_name,
+                                   self.user_project))
+            elif self.provisional_user_project:
+              raise CommandException(
+                  '{}: Failed to auto-detect location for bucket \'{}\'. '
+                  'Please ensure you have storage.buckets.get permission on '
+                  'the bucket and serviceusage.services.use permission on {}, '
+                  'or specify the bucket\'s location using the \'-r\' '
+                  'option.'.format(e.__class__.__name__, url.bucket_name,
+                                   self.provisional_user_project))
+            else:
+              raise CommandException(
+                  '{}: Failed to auto-detect location for bucket \'{}\'. '
+                  'Please ensure you have storage.buckets.get permission on '
+                  'the bucket or specify the bucket\'s location using the '
+                  '\'-r\' option.'
+                  .format(e.__class__.__name__, url.bucket_name))
           bucket_region = bucket.location.lower()
           region_cache[url.bucket_name] = bucket_region
       else:
         bucket_region = region
       final_url = _GenSignedUrl(key, client_email,
-                                method, delta, gcs_path, self.logger,
-                                bucket_region, content_type,
+                                method, delta, gcs_path, self.user_project,
+                                self.provisional_user_project, 
+                                self.logger, bucket_region, content_type,
                                 string_to_sign_debug=True)
 
       expiration = calendar.timegm((datetime.utcnow() + delta).utctimetuple())
@@ -547,9 +573,21 @@ class UrlSignCommand(Command):
                 'with that name before a creating signed URL to access it.'
                 .format(url))
       elif response_code == 403:
-        self.logger.warn(
-            '%s does not have permissions on %s, using this link will likely '
-            'result in a 403 error until at least READ permissions are granted',
-            client_email, url)
+        if self.user_project:
+          self.logger.warn(
+              '%s does not have permissions on either %s or %s, using this '
+              'link will likely result in a 403 error until required '
+              'permissions are granted', client_email, url, self.user_project)
+        elif self.provisional_user_project:
+          self.logger.warn(
+              '%s does not have permissions on either %s or %s, using this '
+              'link will likely result in a 403 error until required '
+              'permissions are granted', client_email, url,
+              self.provisional_user_project)          
+        else:
+          self.logger.warn(
+              '%s does not have permissions on %s, using this link will likely '
+              'result in a 403 error until at least READ permissions are '
+              'granted', client_email, url)
 
     return 0
